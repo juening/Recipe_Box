@@ -16,10 +16,38 @@ var Recipebox = React.createClass({
       newIngred:ingred
     });
   },
+
+  _onDelete: function(id){
+    RecipeboxDispatcher.dispatch({
+      actionType: "RECIPE_DELETED",
+      id:id
+    });
+  },
+
+  _onEdit: function(title, ingred){
+    RecipeboxDispatcher.dispatch({
+      actionType: "RECIPE_EDITED",
+      newTitle:title,
+      newIngred:ingred
+    });
+  },
+
+  componentDidMount: function(){
+    RecipeboxStore.addChangeListener(this._onChange);
+  },
+
+  componentWillUnmount: function(){
+    RecipeboxStore.removeListener(this._onChange);
+  },
+
+  _onChange: function(){
+    this.setState({allRecipes: RecipeboxStore.getRecipes()});
+  },
+
   render: function(){
     return (
       <div className="container">
-        <RecipeList allRecipes={this.state.allRecipes} />
+        <RecipeList allRecipes={this.state.allRecipes} onDelete={this._onDelete} onEdit={this._onEdit} />
         <hr />
         <RecipeAddBox onAddRecipe={this._onAddRecipe} />
       </div>

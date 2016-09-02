@@ -12,16 +12,18 @@ var Recipe = React.createClass({
   },
 
   editRecipe: function(){
-    this.props._onEdit(this.state.title, this.state.ingred);
+    this.props.onEdit(this.state.title, this.state.ingred);
   },
 
   deleteRecipe: function(){
-    this.props._onDelete(this.props.id);
+    this.props.onDelete(this.props.id);
   },
+
   render:function(){
     var recipe=this.props.recipe;
     var id = this.props.id;
-    var ingredients = this.props.recipe.ingredients.join(", ");
+    var ingredients = this.props.recipe.ingredients;
+    console.log("Recipe props",this.props);
     return (
       <div className="panel panel-default"  >
         <div className="panel-heading">

@@ -19,9 +19,9 @@ ReactDOM.render(<Recipebox />, document.getElementById('box'));
 //
 // recipeboxemitter.emit("STARTED_THE_APP");
 
-
-RecipeboxDispatcher.register(function(act){
-  console.log("Received an action");
-  console.log(act);
-});
+// 
+// RecipeboxDispatcher.register(function(act){
+//   console.log("Received an action");
+//   console.log(act);
+// });
 //act is an object
