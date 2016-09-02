@@ -1,8 +1,22 @@
 var React = require('react');
 
 var Recipe = React.createClass({
+  // propTypes: {
+  //   recipe: React.PropTypes.object.isRequired,
+  //   onDelete: React.PropTypes.func.isRequired,
+  //   onEdit: React.PropTypes.func.isRequired
+  // },
+
   getInitialState: function(){
     return {showModal: false};
+  },
+
+  editRecipe: function(){
+    this.props._onEdit(this.state.title, this.state.ingred);
+  },
+
+  deleteRecipe: function(){
+    this.props._onDelete(this.props.id);
   },
   render:function(){
     var recipe=this.props.recipe;
@@ -19,7 +33,7 @@ var Recipe = React.createClass({
           <div className="panel-body">{ingredients}</div>
           <div className="panel-footer">
             <button type="button" className="btn btn-primary btn-sm" data-toggle="modal" data-target="#recipeCard">Edit Recipe</button>
-            <button type="button" className="btn btn-danger btn-sm">Delete Recipe</button>
+            <button type="button" className="btn btn-danger btn-sm" onClick={this.deleteRecipe} >Delete Recipe</button>
           </div>
         </div>
         <div className="modal fade" id="recipeCard"  role="dialog" >
@@ -33,8 +47,7 @@ var Recipe = React.createClass({
                 <p>Ingredients</p>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-primary btn-sm">Edit Recipe</button>
-                <button type="button" className="btn btn-danger btn-sm">Delete Recipe</button>
+                <button type="button" className="btn btn-primary btn-sm">Save Recipe</button>
                 <button type="button" className="btn btn-default btn-sm" data-dismiss="modal">Close</button>
               </div>
             </div>

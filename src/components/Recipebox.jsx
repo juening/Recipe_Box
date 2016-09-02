@@ -1,31 +1,27 @@
 var React = require('react');
 var RecipeList = require('./RecipeList.jsx');
 var RecipeAddBox = require('./RecipeAddBox.jsx');
+var RecipeboxDispatcher = require('../dispatcher/RecipeDispatcher');
+var RecipeboxStore = require('../stores/RecipeStore');
 
 var Recipebox = React.createClass({
   getInitialState: function(){
-    return {allRecipes:
-      [
-         {
-            ingredients: ["Pumpkin Puree", "Sweetened Condensed Milk", "Eggs", "Pumpkin Pie Spice", "Pie Crust"],
-            title: "Pumpkin Pie"
-        },
-         {
-            ingredients: ["Noodles", "Tomato Sauce", "(Optional) Meatballs"],
-            title: "Spaghetti"
-        },
-         {
-            ingredients: ["Onion", "Pie Crust", "Sounds Yummy right?"],
-            title: "Onion Pie"
-        }
-      ]};
+    return {allRecipes: RecipeboxStore.getRecipes() };
+  },
+
+  _onAddRecipe: function(title, ingred){
+    RecipeboxDispatcher.dispatch({
+      actionType: "RECIPE_ADDED",
+      newTitle:title,
+      newIngred:ingred
+    });
   },
   render: function(){
     return (
       <div className="container">
         <RecipeList allRecipes={this.state.allRecipes} />
         <hr />
-        <RecipeAddBox />
+        <RecipeAddBox onAddRecipe={this._onAddRecipe} />
       </div>
     );
   }

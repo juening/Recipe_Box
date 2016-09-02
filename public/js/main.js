@@ -20765,8 +20765,22 @@ var React = require('react');
 var Recipe = React.createClass({
   displayName: "Recipe",
 
+  // propTypes: {
+  //   recipe: React.PropTypes.object.isRequired,
+  //   onDelete: React.PropTypes.func.isRequired,
+  //   onEdit: React.PropTypes.func.isRequired
+  // },
+
   getInitialState: function () {
     return { showModal: false };
+  },
+
+  editRecipe: function () {
+    this.props._onEdit(this.state.title, this.state.ingred);
+  },
+
+  deleteRecipe: function () {
+    this.props._onDelete(this.props.id);
   },
   render: function () {
     var recipe = this.props.recipe;
@@ -20806,7 +20820,7 @@ var Recipe = React.createClass({
           ),
           React.createElement(
             "button",
-            { type: "button", className: "btn btn-danger btn-sm" },
+            { type: "button", className: "btn btn-danger btn-sm", onClick: this.deleteRecipe },
             "Delete Recipe"
           )
         )
@@ -20849,12 +20863,7 @@ var Recipe = React.createClass({
               React.createElement(
                 "button",
                 { type: "button", className: "btn btn-primary btn-sm" },
-                "Edit Recipe"
-              ),
-              React.createElement(
-                "button",
-                { type: "button", className: "btn btn-danger btn-sm" },
-                "Delete Recipe"
+                "Save Recipe"
               ),
               React.createElement(
                 "button",
@@ -20877,13 +20886,33 @@ var React = require('react');
 var RecipeAddBox = React.createClass({
   displayName: "RecipeAddBox",
 
+  getInitialState: function () {
+    return {
+      title: "",
+      value: ""
+    };
+  },
+
+  _addRecipe: function () {
+    this.props.onAddRecipe(this.state.title, this.state.value);
+  },
+
+  _onTitleChange: function (event) {
+    this.setState({ title: event.target.value });
+  },
+
+  _onValueChange: function (event) {
+    this.setState({ value: event.target.value });
+  },
+
   render: function () {
     return React.createElement(
       "div",
       null,
-      React.createElement("textarea", { id: "addRecipe", className: "col-sm-6" }),
+      React.createElement("input", { type: "text", className: "col-sm-6", onChange: this._onTitleChange }),
+      React.createElement("textarea", { id: "addRecipe", className: "col-sm-6", onChange: this._onValueChange }),
       " ",
-      React.createElement("input", { type: "button", className: "btn btn-primary", value: "Add Recipe" })
+      React.createElement("input", { type: "button", className: "btn btn-primary", value: "Add Recipe", onClick: this._addRecipe })
     );
   }
 });
@@ -20893,19 +20922,31 @@ module.exports = RecipeAddBox;
 },{"react":171}],174:[function(require,module,exports){
 var React = require('react');
 var Recipe = require('./Recipe.jsx');
+var RecipeboxDispatcher = require("../dispatcher/RecipeDispatcher");
 
 var RecipeList = React.createClass({
   displayName: 'RecipeList',
 
 
-  // propTypes: {
-  //   allRecipes: React.PropTypes.array.isRequired
-  // },
+  _onDelete: function (id) {
+    RecipeboxDispatcher.dispatch({
+      actionType: "RECIPE_DELETED",
+      id: id
+    });
+  },
+
+  _onEdit: function (title, ingred) {
+    RecipeboxDispatcher.dispatch({
+      actionType: "RECIPE_EDITED",
+      newTitle: title,
+      newIngred: ingred
+    });
+  },
 
   render: function () {
     var allRecipes = this.props.allRecipes;
     var recipes = allRecipes.map(function (recipe, index) {
-      return React.createElement(Recipe, { key: index, id: index, recipe: recipe });
+      return React.createElement(Recipe, { key: index, id: index, recipe: recipe, onEdit: this._onEdit, onDelete: this._onDelete });
     });
     return React.createElement(
       'div',
@@ -20917,25 +20958,26 @@ var RecipeList = React.createClass({
 
 module.exports = RecipeList;
 
-},{"./Recipe.jsx":172,"react":171}],175:[function(require,module,exports){
+},{"../dispatcher/RecipeDispatcher":177,"./Recipe.jsx":172,"react":171}],175:[function(require,module,exports){
 var React = require('react');
 var RecipeList = require('./RecipeList.jsx');
 var RecipeAddBox = require('./RecipeAddBox.jsx');
+var RecipeboxDispatcher = require('../dispatcher/RecipeDispatcher');
+var RecipeboxStore = require('../stores/RecipeStore');
 
 var Recipebox = React.createClass({
   displayName: 'Recipebox',
 
   getInitialState: function () {
-    return { allRecipes: [{
-        ingredients: ["Pumpkin Puree", "Sweetened Condensed Milk", "Eggs", "Pumpkin Pie Spice", "Pie Crust"],
-        title: "Pumpkin Pie"
-      }, {
-        ingredients: ["Noodles", "Tomato Sauce", "(Optional) Meatballs"],
-        title: "Spaghetti"
-      }, {
-        ingredients: ["Onion", "Pie Crust", "Sounds Yummy right?"],
-        title: "Onion Pie"
-      }] };
+    return { allRecipes: RecipeboxStore.getRecipes() };
+  },
+
+  _onAddRecipe: function (title, ingred) {
+    RecipeboxDispatcher.dispatch({
+      actionType: "RECIPE_ADDED",
+      newTitle: title,
+      newIngred: ingred
+    });
   },
   render: function () {
     return React.createElement(
@@ -20943,19 +20985,134 @@ var Recipebox = React.createClass({
       { className: 'container' },
       React.createElement(RecipeList, { allRecipes: this.state.allRecipes }),
       React.createElement('hr', null),
-      React.createElement(RecipeAddBox, null)
+      React.createElement(RecipeAddBox, { onAddRecipe: this._onAddRecipe })
     );
   }
 });
 
 module.exports = Recipebox;
 
-},{"./RecipeAddBox.jsx":173,"./RecipeList.jsx":174,"react":171}],176:[function(require,module,exports){
+},{"../dispatcher/RecipeDispatcher":177,"../stores/RecipeStore":180,"./RecipeAddBox.jsx":173,"./RecipeList.jsx":174,"react":171}],176:[function(require,module,exports){
+function Dispatcher() {
+  this._lastID = 0;
+  this._callbacks = {};
+}
+
+Dispatcher.prototype.register = function (callback) {
+  var id = "CID_" + this._lastID++;
+  this._callbacks[id] = callback;
+  return id;
+};
+
+Dispatcher.prototype.dispatch = function (action) {
+  for (var id in this._callbacks) {
+    this._callbacks[id](action);
+  }
+};
+//action is an object
+
+Dispatcher.prototype.waitFor = function (ids) {};
+
+module.exports = Dispatcher;
+
+},{}],177:[function(require,module,exports){
+var React = require('react');
+var Dispatcher = require('../dispatcher');
+
+var RecipeboxDispatcher = new Dispatcher();
+
+module.exports = RecipeboxDispatcher;
+
+},{"../dispatcher":176,"react":171}],178:[function(require,module,exports){
+function EventEmitter() {
+  this._events = [];
+}
+
+EventEmitter.prototype.on = function (type, listener) {
+  this._events[type] = this._events[type] || [];
+  this._events[type].push(listener);
+};
+
+EventEmitter.prototype.emit = function (type) {
+  if (this._events[type]) {
+    this._events[type].forEach(function (listener) {
+      listener();
+    });
+  }
+};
+
+EventEmitter.prototype.removeListener = function (type, listener) {
+  if (this._events[type]) {
+    this._events[type].splice(this._events[type].indexOf(listener), 1);
+  }
+};
+
+module.exports = EventEmitter;
+
+},{}],179:[function(require,module,exports){
 var React = require('react');
 var ReactDOM = require('react-dom');
+var EventEmitter = require('./eventemitter');
+var RecipeboxDispatcher = require('./dispatcher/RecipeDispatcher');
 
 var Recipebox = require('./components/Recipebox.jsx');
 
 ReactDOM.render(React.createElement(Recipebox, null), document.getElementById('box'));
 
-},{"./components/Recipebox.jsx":175,"react":171,"react-dom":28}]},{},[176]);
+// var recipeboxemitter = new EventEmitter();
+//
+// recipeboxemitter.on("STARTED_THE_APP", function(){
+//   console.log("Started tha app");
+// });
+//
+// recipeboxemitter.on("STARTED_THE_APP", function(){
+//   console.log("Started tha app again");
+// });
+//
+// recipeboxemitter.emit("STARTED_THE_APP");
+
+
+RecipeboxDispatcher.register(function (act) {
+  console.log("Received an action");
+  console.log(act);
+});
+//act is an object
+
+},{"./components/Recipebox.jsx":175,"./dispatcher/RecipeDispatcher":177,"./eventemitter":178,"react":171,"react-dom":28}],180:[function(require,module,exports){
+var React = require('react');
+var EventEmitter = require("../eventemitter");
+var RecipeboxDispatcher = require('../dispatcher/RecipeDispatcher');
+var savedRecipes = [{
+  ingredients: ["Pumpkin Puree", "Sweetened Condensed Milk", "Eggs", "Pumpkin Pie Spice", "Pie Crust"],
+  title: "Pumpkin Pie"
+}, {
+  ingredients: ["Noodles", "Tomato Sauce", "(Optional) Meatballs"],
+  title: "Spaghetti"
+}, {
+  ingredients: ["Onion", "Pie Crust", "Sounds Yummy right?"],
+  title: "Onion Pie"
+}];
+
+var RecipeboxStore = new EventEmitter();
+
+RecipeboxStore.getRecipes = function () {
+  return savedRecipes;
+};
+
+RecipeboxStore.addRecipe = function (newTitle, newIngred) {
+  savedRecipes.push({ ingredients: newIngred, title: newTitle });
+};
+
+RecipeboxStore.deleteRecipe = function () {};
+
+RecipeboxStore.editRecipe = function () {};
+
+RecipeboxDispatcher.register(function (act) {
+  console.log("Received an action");
+  console.log(act);
+});
+//act is an object
+
+module.exports = RecipeboxStore;
+
+},{"../dispatcher/RecipeDispatcher":177,"../eventemitter":178,"react":171}]},{},[179]);
